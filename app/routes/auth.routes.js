@@ -41,7 +41,7 @@ module.exports = app => {
     async (req, res) => {
       // #swagger.tags = ['Users']
       // #swagger.path = ['/api/auth/createuser']
-      const { firstname, lastname, email, password, userrole, phone, managerid, isactive, whatsapp_number, whatsapp_settings } = req.body;
+      const { firstname, lastname, email, password, userrole,  managerid, isactive, whatsapp_number, whatsapp_settings } = req.body;
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -85,7 +85,7 @@ module.exports = app => {
         email: email,
         password: secPass,
         userrole: userrole,
-        phone: phone,
+        
         managerid: managerid,
         companyid: req.userinfo.companyid,
         isactive: isactive,
@@ -362,7 +362,7 @@ module.exports = app => {
 
       // #swagger.tags = ['Users']
       // #swagger.path = ['/api/auth/:id']
-      const { firstname, lastname, email, phone, userrole, password, isactive, managerid, whatsapp_number, whatsapp_settings } = req.body;
+      const { firstname, lastname, email, userrole, password, isactive, managerid, whatsapp_number, whatsapp_settings } = req.body;
       const errors = [];
       const userRec = {};
 
@@ -370,7 +370,7 @@ module.exports = app => {
       if (req.body.hasOwnProperty("lastname")) { userRec.lastname = lastname; if (!lastname) { errors.push('Lastname is required') } };
       if (req.body.hasOwnProperty("email")) { userRec.email = email; if (!email) { errors.push('Email is required') } };
       if (req.body.hasOwnProperty("password")) { userRec.password = password; if (!password) { errors.push('Password is required') } };
-      if (req.body.hasOwnProperty("phone")) { userRec.phone = phone };
+      
       if (req.body.hasOwnProperty("whatsapp_number")) { userRec.whatsapp_number = whatsapp_number };
 
       if (req.body.hasOwnProperty("userrole")) { userRec.userrole = userrole };

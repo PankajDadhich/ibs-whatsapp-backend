@@ -13,8 +13,8 @@ const global = require("../constants/global.js");
 // };
 async function createUser(newUser) {
 
-  const { firstname, lastname, email, phone, password, userrole, companyid, managerid, isactive, whatsapp_number,whatsapp_settings } = newUser;
-  const result = await sql.query("INSERT into public.user (firstname, lastname, email,phone, password, userrole, companyid, managerid,isactive, whatsapp_number,whatsapp_settings) VALUES ($1, $2, $3, $4, $5, $6,$7, $8,$9, $10, $11) RETURNING id, firstname, lastname, email,phone, password, userrole, companyid,managerid,isactive, whatsapp_number, whatsapp_settings", [firstname, lastname, email, phone, password, userrole, companyid, managerid, isactive, whatsapp_number, whatsapp_settings]);
+  const { firstname, lastname, email,  password, userrole, companyid, managerid, isactive, whatsapp_number,whatsapp_settings } = newUser;
+  const result = await sql.query("INSERT into public.user (firstname, lastname, email,password, userrole, companyid, managerid,isactive, whatsapp_number,whatsapp_settings) VALUES ($1, $2, $3, $4, $5, $6,$7, $8,$9, $10) RETURNING id, firstname, lastname, email, password, userrole, companyid,managerid,isactive, whatsapp_number, whatsapp_settings", [firstname, lastname, email,  password, userrole, companyid, managerid, isactive, whatsapp_number, whatsapp_settings]);
   if (result.rowCount > 0) {
     return result.rows[0];
   }
@@ -96,13 +96,14 @@ async function findByEmail(email) {
 // INNER JOIN public.COMPANY c ON u.companyid = c.id
 // WHERE u.email = $1 AND u.isactive = true
 // GROUP BY u.email, u.id, u.firstname, u.companyid, c.name, c.tenantcode, c.logourl, c.sidebarbgurl`, [email]);
+//whatsapp_number iskw liye coe me kuch update nhi kar rkha hai
   const result = await sql.query(`SELECT
   json_build_object(
     'id', u.id,
     'firstname', u.firstname,
     'lastname', u.lastname,
     'email', u.email,
-    'phone', u.phone,
+    'whatsapp_number',u.whatsapp_number, 
     'password', u.password,
     'userrole', u.userrole,
     'companyid', u.companyid,
@@ -165,7 +166,7 @@ GROUP BY
 async function findById(id) {
   try {
 
-    let query = `SELECT u.id, u.email, concat(u.firstname,' ', u.lastname) contactname, u.firstname, u.lastname, u.userrole, u.phone, u.isactive, u.managerid, concat(mu.firstname,' ', mu.lastname) managername, u.whatsapp_number, u.whatsapp_settings  FROM public.user u`;
+    let query = `SELECT u.id, u.email, concat(u.firstname,' ', u.lastname) contactname, u.firstname, u.lastname, u.userrole, u.isactive, u.managerid, concat(mu.firstname,' ', mu.lastname) managername, u.whatsapp_number, u.whatsapp_settings  FROM public.user u`;
     query += ` LEFT JOIN public.user mu ON mu.id = u.managerid `;
     query += ` WHERE u.id = $1`;
     const result = await sql.query(query, [id]);
@@ -215,7 +216,7 @@ async function updateById(id, userRec) {
 
 async function findAll(userinfo) {
   try {
-    let query = "SELECT u.id, concat(u.firstname, ' ' ,u.lastname) username, concat(mu.firstname,' ', mu.lastname) managername, u.managerid, u.firstname, u.lastname, u.email, u.userrole, u.phone, u.isactive, u.whatsapp_number, u.whatsapp_settings, c.name AS companyname FROM public.user u ";
+    let query = "SELECT u.id, concat(u.firstname, ' ' ,u.lastname) username, concat(mu.firstname,' ', mu.lastname) managername, u.managerid, u.firstname, u.lastname, u.email, u.userrole, u.isactive, u.whatsapp_number, u.whatsapp_settings, c.name AS companyname FROM public.user u ";
     query += ` LEFT JOIN public.user mu ON mu.id = u.managerid LEFT JOIN  public.company c ON c.id = u.companyid`;
 
     if (userinfo.userrole === 'SYS_ADMIN') {
