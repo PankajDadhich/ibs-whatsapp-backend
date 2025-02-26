@@ -8,7 +8,6 @@ function init(schema_name){
 //....................................... create report.........................................
 async function create(newReport, userid){
     delete newReport.id;
-    console.log("this.schema ==> ", this.schema);
     const result = await sql.query(`INSERT INTO ${this.schema}.report (name, query, apiname, filterdataquery, filterrowquery, discription, iscustom, sortingdata, ownerid, createdbyid, lastmodifiedbyid)  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`, 
     [newReport.name, newReport.query, newReport.apiname, newReport.filterdataquery, newReport.filterrowquery, newReport.discription , newReport.iscustom, newReport.sortingdata, userid, userid, userid]);
     if(result.rows.length > 0){
@@ -19,14 +18,12 @@ async function create(newReport, userid){
 
 //.....................................find report by id........................................
 async function findById(id) {
-  console.log(this.schema)
+
   const result = await sql.query(`SELECT * FROM ${this.schema}.report WHERE id = $1`, [id]);
-  console.log(result)
+ 
   if (result) {
-    console.log("query ==> ", result.rows[0]);
     const query = result.rows[0];
     if (query) {
-      console.log("query ==> ", result.rows[0]);
       return query;
     }
   }
@@ -39,13 +36,10 @@ async function findByName (name) {
   const result = await sql.query(`SELECT * FROM ${this.schema}.report WHERE apiname = $1`,[name]);
   
   if(result.rows.length > 0){
-      console.log("query ", result.rows[0].query);
       const query = result.rows[0].query;
       if(query) {
-          console.log("query ", result.rows[0].query);
 
           const allData = await fetchData(query);
-          console.log("allData ",allData);
           return allData;
       }
       return null;
@@ -70,7 +64,6 @@ async function findAll(reportname){
     }
   
     const result = await sql.query(query);
-    console.log('rows:===>', result.rows);
     return result.rows 
 };
 
@@ -79,7 +72,6 @@ async function findAll(reportname){
 //..............................................Update report................................
 async function updateById (id, newReport, userid){
     delete newReport.id;
-    console.log("usrr",userid)
     newReport['lastmodifiedbyid'] = userid;
     const query = buildUpdateQuery(id, newReport, this.schema);
     // Turn req.body into an array of values

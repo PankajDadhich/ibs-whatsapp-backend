@@ -82,7 +82,7 @@ async function checkEmailExists(email, id = null) {
         FROM (
             SELECT id FROM public.leads WHERE email = $1 ${id ? "AND id != $2" : ""}
             UNION ALL
-            SELECT id FROM public."user" WHERE email = $1
+            SELECT id FROM public."company" WHERE adminemail = $1
         ) subquery
         LIMIT 1;
     `;

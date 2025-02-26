@@ -329,7 +329,22 @@ module.exports = app => {
                 // Check for response status
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Failed to fetch data: ${response.statusText} - ${errorText}`);
+                    let errorJson;
+        
+                    try {
+                        errorJson = JSON.parse(errorText);
+                    } catch (parseError) {
+                        errorJson = { message: "Unable to parse error response", raw: errorText };
+                    }
+                    // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+                    return {
+                        error: {
+                            message: errorJson?.error?.message || "Unknown error",
+                            title: errorJson?.error?.error_user_title || "No title",
+                            body: errorJson?.error?.error_user_msg || "No body",
+                        }
+        
+                    };
                 }
 
                 const jsonData = await response.json();
@@ -392,14 +407,36 @@ module.exports = app => {
                     // Check for response status
                     if (!response.ok) {
                         const errorText = await response.text();
-                        throw new Error(`Failed to fetch data: ${response.statusText} - ${errorText}`);
+                        let errorJson;
+            
+                        try {
+                            errorJson = JSON.parse(errorText);
+                        } catch (parseError) {
+                            errorJson = { message: "Unable to parse error response", raw: errorText };
+                        }
+                        // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+                        return {
+                            error: {
+                                message: errorJson?.error?.message || "Unknown error",
+                                title: errorJson?.error?.error_user_title || "No title",
+                                body: errorJson?.error?.error_user_msg || "No body",
+                            }
+            
+                        };
                     }
 
                     const jsonData = await response.json();
 
                     res.status(200).json(jsonData);
                 } else {
-                    res.status(400).json({ error: 'Bad Request: Missing file data' });
+                    
+                    // res.status(400).json({ error: 'Bad Request: Missing file data' });
+                    res.status(400).json({ 
+                        error: {
+                            message: error?.message || "An unexpected error occurred"
+                        } 
+                    });
+                    
                 }
 
             } catch (error) {
@@ -467,7 +504,22 @@ module.exports = app => {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to upload media: ${response.statusText} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         const jsonData = await response.json();

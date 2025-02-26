@@ -7,15 +7,12 @@ function init(schema_name){
 
 //.....................................find fields by tablename........................................
 async function findFieldsTableName(tablename) {
-    console.log('tablename',tablename)
-    console.log()
     //console.log("id ", id);
     //const result = await sql.query(`SELECT * FROM ${this.schema}.order WHERE id = $1`,[id]);
     const result = await sql.query(
       `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'ibs_ibirds' AND table_name = $1`,
       [tablename]
     );
-    console.log("Rows ", result.rows);
     if (result.rows.length > 0) {
       return result.rows;
     }

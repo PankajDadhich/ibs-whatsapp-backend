@@ -1,6 +1,12 @@
 const sql = require("./db.js");
 const global = require("../constants/global.js");
 
+const Company = require("../models/company.model.js");
+let schema = '';
+
+function init(schema_name) {
+  this.schema = schema_name;
+}
 
 // async function createUser (newUser){
 
@@ -13,8 +19,8 @@ const global = require("../constants/global.js");
 // };
 async function createUser(newUser) {
 
-  const { firstname, lastname, email,  password, userrole, companyid, managerid, isactive, whatsapp_number,whatsapp_settings } = newUser;
-  const result = await sql.query("INSERT into public.user (firstname, lastname, email,password, userrole, companyid, managerid,isactive, whatsapp_number,whatsapp_settings) VALUES ($1, $2, $3, $4, $5, $6,$7, $8,$9, $10) RETURNING id, firstname, lastname, email, password, userrole, companyid,managerid,isactive, whatsapp_number, whatsapp_settings", [firstname, lastname, email,  password, userrole, companyid, managerid, isactive, whatsapp_number, whatsapp_settings]);
+  const { firstname, lastname, email, password, userrole, companyid, managerid, isactive, whatsapp_number,whatsapp_settings } = newUser;
+  const result = await sql.query(`INSERT into ${this.schema}.user (firstname, lastname, email, password, userrole, companyid, managerid,isactive, whatsapp_number,whatsapp_settings) VALUES ($1, $2, $3, $4, $5, $6,$7, $8,$9, $10) RETURNING id, firstname, lastname, email, password, userrole, companyid,managerid,isactive, whatsapp_number, whatsapp_settings`, [firstname, lastname, email, password, userrole, companyid, managerid, isactive, whatsapp_number, whatsapp_settings]);
   if (result.rowCount > 0) {
     return result.rows[0];
   }
@@ -45,10 +51,10 @@ async function checkLicenses(companyid, currentUserId) {
   }
   let result = null;
   if (currentUserId) {
-    result = await sql.query("SELECT count(*) total from public.user where companyid = $1 AND isactive=true AND id != $2",
+    result = await sql.query(`SELECT count(*) total from ${this.schema}.user where companyid = $1 AND isactive=true AND id != $2`,
       [companyid, currentUserId]);
   } else {
-    result = await sql.query("SELECT count(*) total from public.user where companyid = $1 AND isactive=true",
+    result = await sql.query(`SELECT count(*) total from ${this.schema}.user where companyid = $1 AND isactive=true`,
       [companyid]);
   }
 
@@ -96,14 +102,13 @@ async function findByEmail(email) {
 // INNER JOIN public.COMPANY c ON u.companyid = c.id
 // WHERE u.email = $1 AND u.isactive = true
 // GROUP BY u.email, u.id, u.firstname, u.companyid, c.name, c.tenantcode, c.logourl, c.sidebarbgurl`, [email]);
-//whatsapp_number iskw liye coe me kuch update nhi kar rkha hai
   const result = await sql.query(`SELECT
   json_build_object(
     'id', u.id,
     'firstname', u.firstname,
     'lastname', u.lastname,
     'email', u.email,
-    'whatsapp_number',u.whatsapp_number, 
+    'whatsapp_number', u.whatsapp_number,
     'password', u.password,
     'userrole', u.userrole,
     'companyid', u.companyid,
@@ -143,7 +148,7 @@ async function findByEmail(email) {
       ) FILTER (WHERE pm.moduleid IS NOT NULL AND m.status = 'active' ), '[]'
     )
   ) AS userinfo
-FROM public.user u
+FROM ${this.schema}.user u
 INNER JOIN public.company c ON u.companyid = c.id
 LEFT JOIN public.subscriptions s ON s.company_id = c.id
 LEFT JOIN public.invoices i ON s.id = i.subscription_id
@@ -166,8 +171,8 @@ GROUP BY
 async function findById(id) {
   try {
 
-    let query = `SELECT u.id, u.email, concat(u.firstname,' ', u.lastname) contactname, u.firstname, u.lastname, u.userrole, u.isactive, u.managerid, concat(mu.firstname,' ', mu.lastname) managername, u.whatsapp_number, u.whatsapp_settings  FROM public.user u`;
-    query += ` LEFT JOIN public.user mu ON mu.id = u.managerid `;
+    let query = `SELECT u.id, u.email, concat(u.firstname,' ', u.lastname) contactname, u.firstname, u.lastname, u.userrole, u.isactive, u.managerid, concat(mu.firstname,' ', mu.lastname) managername, u.whatsapp_number, u.whatsapp_settings  FROM ${this.schema}.user u`;
+    query += ` LEFT JOIN ${this.schema}.user mu ON mu.id = u.managerid `;
     query += ` WHERE u.id = $1`;
     const result = await sql.query(query, [id]);
     if (result.rows.length > 0)
@@ -180,15 +185,17 @@ async function findById(id) {
 };
 
 async function updateRecById(id, userRec, userid) {
-  delete userRec.id;
-  //userRec['lastmodifiedbyid'] = userid;
-  const query = buildUpdateQuery(id, userRec);
-  // Turn req.body into an array of values
-  var colValues = Object.keys(userRec).map(function (key) {
-    return userRec[key];
-  });
+
 
   try {
+
+    delete userRec.id;
+    //userRec['lastmodifiedbyid'] = userid;
+    const query = await buildUpdateQuery(id, userRec, this.schema);
+    // Turn req.body into an array of values
+    var colValues = Object.keys(userRec).map(function (key) {
+      return userRec[key];
+    });
     const result = await sql.query(query, colValues);
     if (result.rowCount > 0) {
       return { "id": id, ...userRec };
@@ -202,7 +209,7 @@ async function updateRecById(id, userRec, userid) {
 
 async function updateById(id, userRec) {
   try {
-    const result = await sql.query(`UPDATE public.user SET password = $1 WHERE id = $2`, [userRec.password, id]);
+    const result = await sql.query(`UPDATE ${this.schema}.user SET password = $1 WHERE id = $2`, [userRec.password, id]);
     if (result.rowCount > 0)
       return "Updated successfully";
   } catch (error) {
@@ -214,23 +221,71 @@ async function updateById(id, userRec) {
 
 
 
+// async function findAll(userinfo) {
+//   try {
+//     let query = "SELECT u.id, concat(u.firstname, ' ' ,u.lastname) username, concat(mu.firstname,' ', mu.lastname) managername, u.managerid, u.firstname, u.lastname, u.email, u.userrole, u.isactive, u.whatsapp_number, u.whatsapp_settings, c.name AS companyname FROM public.user u ";
+//     query += ` LEFT JOIN public.user mu ON mu.id = u.managerid LEFT JOIN  public.company c ON c.id = u.companyid`;
+
+//     if (userinfo.userrole === 'SYS_ADMIN') {
+//       const result = await sql.query(query);
+      
+//       if (result.rows.length > 0) 
+//         return result.rows;
+//     } else {
+//       query += " WHERE u.companyid = $1 AND (u.id = $2 OR u.managerid = $2)";
+//       // console.log("query",query);
+//       // console.log("userinfo.companyid, userinfo.userid",userinfo.companyid, userinfo.id);
+//       const result = await sql.query(query, [userinfo.companyid, userinfo.id]);
+
+//       if (result.rows.length > 0) 
+//         return result.rows;
+//     }
+
+//   } catch (error) {
+//     console.log("error ", error);
+//   }
+
+//   return null;
+// };
+
+
+
 async function findAll(userinfo) {
   try {
-    let query = "SELECT u.id, concat(u.firstname, ' ' ,u.lastname) username, concat(mu.firstname,' ', mu.lastname) managername, u.managerid, u.firstname, u.lastname, u.email, u.userrole, u.isactive, u.whatsapp_number, u.whatsapp_settings, c.name AS companyname FROM public.user u ";
-    query += ` LEFT JOIN public.user mu ON mu.id = u.managerid LEFT JOIN  public.company c ON c.id = u.companyid`;
+    let query = "SELECT u.id, concat(u.firstname, ' ' ,u.lastname) username, concat(mu.firstname,' ', mu.lastname) managername, u.managerid, u.firstname, u.lastname, u.email, u.userrole, u.isactive, u.whatsapp_number, u.whatsapp_settings,c.tenantcode, c.name";
+
+    let result = [];
 
     if (userinfo.userrole === 'SYS_ADMIN') {
-      const result = await sql.query(query);
-      
-      if (result.rows.length > 0) 
-        return result.rows;
-    } else {
-      query += " WHERE u.companyid = $1 AND (u.id = $2 OR u.managerid = $2)";
-      // console.log("query",query);
-      // console.log("userinfo.companyid, userinfo.userid",userinfo.companyid, userinfo.id);
-      const result = await sql.query(query, [userinfo.companyid, userinfo.id]);
+      let query1 = query + ` AS companyname FROM ${this.schema}.user u LEFT JOIN ${this.schema}.user mu ON mu.id = u.managerid LEFT JOIN public.company c ON c.id = u.companyid`;
+      const result1 = await sql.query(query1);
+      result = result.concat(result1.rows);
 
-      if (result.rows.length > 0) 
+      let schemaQuery = `select s.nspname as schema_name
+        from pg_catalog.pg_namespace s
+        join pg_catalog.pg_user u on u.usesysid = s.nspowner
+        where nspname not in ('information_schema', 'pg_catalog', 'public', 'ibs_ibirds')
+              and nspname not like 'pg_toast%'
+              and nspname not like 'pg_temp_%'
+        order by schema_name`;
+      const schemaResult = await sql.query(schemaQuery);
+      if (schemaResult.rows.length > 0) {
+        const promises = schemaResult?.rows?.map(async (item) => {
+          let query2 = query + ` AS companyname FROM ${item.schema_name}.user u LEFT JOIN ${item.schema_name}.user mu ON mu.id = u.managerid LEFT JOIN public.company c ON c.id = u.companyid`;
+          const result2 = await sql.query(query2);
+          return result2.rows;
+        });
+
+        const query2Results = await Promise.all(promises);
+        result = result.concat(...query2Results);
+      }
+     if (result.length > 0)
+        return result;
+    } else {
+      query += ` AS companyname FROM ${this.schema}.user u LEFT JOIN ${this.schema}.user mu ON mu.id = u.managerid LEFT JOIN public.company c ON c.id = u.companyid WHERE u.companyid = $1 AND (u.id = $2 OR u.managerid = $2)`;
+     const result = await sql.query(query, [userinfo.companyid, userinfo.id]);
+
+      if (result.rows.length > 0)
         return result.rows;
     }
 
@@ -242,9 +297,12 @@ async function findAll(userinfo) {
 };
 
 
-function buildUpdateQuery(id, cols) {
+async function buildUpdateQuery(id, cols, schema_name) {
   // Setup static beginning of query
-  var query = ['UPDATE public.user '];
+  var query = [`UPDATE ${schema_name}.user `];
+// function buildUpdateQuery(id, cols) {
+//   // Setup static beginning of query
+//   var query = ['UPDATE public.user '];
   query.push('SET');
 
   // Create another array storing each set command
@@ -265,7 +323,7 @@ function buildUpdateQuery(id, cols) {
 async function getAllManager(role) {
   try {
     //ORDER BY createddate DESC
-    var query = "SELECT id, isactive, concat(firstname, ' ' ,lastname) username, userrole FROM public.user WHERE ";
+    var query = `SELECT id, isactive, concat(firstname, ' ' ,lastname) username, userrole FROM ${this.schema}.user WHERE `;
     query += " userrole = 'SYS_ADMIN' OR  userrole = 'ADMIN' ";
 
     result = await sql.query(query);
@@ -285,12 +343,12 @@ async function checkForDuplicate(email, whatsappNumber, userId = null) {
   const params = [email, whatsappNumber];
   let query = `
       SELECT id, email, whatsapp_number
-      FROM public.user
+      FROM ${this.schema}.user
       WHERE email = $1
       ${userId ? `AND id != $3` : ''}
       UNION ALL
       SELECT id, email, whatsapp_number
-      FROM public.user
+      FROM ${this.schema}.user
       WHERE whatsapp_number = $2
       ${userId ? `AND id != $3` : ''}
      
@@ -332,7 +390,7 @@ async function checkCompanybyTcode(tcode) {
 
 async function getUserCount(companyId) {
   try {
-    const query = 'SELECT COUNT(*) FROM public.user WHERE companyid = $1 AND userrole = $2';
+    const query = `SELECT COUNT(*) FROM ${this.schema}.user WHERE companyid = $1 AND userrole = $2`;
     const result = await sql.query(query, [companyId, 'USER']);
         return parseInt(result.rows[0].count, 10); 
   } catch (error) {
@@ -346,5 +404,5 @@ async function getUserCount(companyId) {
 module.exports = {
   createUser, updateRecById,
   setRole, findByEmail, findById, findAll, updateById, getAllManager,
-  checkLicenses, checkForDuplicate, checkCompanybyTcode, getUserCount
+  checkLicenses, checkForDuplicate, checkCompanybyTcode, getUserCount, init
 };

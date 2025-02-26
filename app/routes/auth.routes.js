@@ -41,7 +41,8 @@ module.exports = app => {
     async (req, res) => {
       // #swagger.tags = ['Users']
       // #swagger.path = ['/api/auth/createuser']
-      const { firstname, lastname, email, password, userrole,  managerid, isactive, whatsapp_number, whatsapp_settings } = req.body;
+      await Auth.init(req.userinfo.tenantcode);
+      const { firstname, lastname, email, password, userrole, managerid, isactive, whatsapp_number, whatsapp_settings } = req.body;
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -85,7 +86,6 @@ module.exports = app => {
         email: email,
         password: secPass,
         userrole: userrole,
-        
         managerid: managerid,
         companyid: req.userinfo.companyid,
         isactive: isactive,
@@ -112,7 +112,7 @@ module.exports = app => {
 
   // Create a new Tutorial
   router.post("/login", [
-    body('email', 'Please enter firstname').isEmail(),
+    body('email', 'Please enter email').isEmail(),
     body('password', 'Please enter password').isLength({ min: 1 }),
     body('tcode', 'Please enter company code').exists(),
   ],
@@ -122,7 +122,7 @@ module.exports = app => {
       let success = false;
       try {
         const { email, password, tcode  } = req.body;
-    
+    console.log(email, password, tcode)
 
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -136,7 +136,7 @@ module.exports = app => {
 
         // const companyData = await Company.findByEmail(email);
         // await Auth.init(companyData.tenantcode);
-
+        await Auth.init(tcode);
 
         const userRec = await Auth.findByEmail(email);
         if (!userRec) {
@@ -162,7 +162,9 @@ module.exports = app => {
         const refreshToken = jwt.sign({'email':userInfo.email}, process.env.JWT_REFRESH_SECERT_KEY, { expiresIn: '7d' });
         success = true;
         //const permissions = userInfo.permissions;
-        return res.status(200).json({ success, authToken, refreshToken });
+        return res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'strict' }).status(200).json({ success, authToken, refreshToken });
+   
+        // return res.status(200).json({ success, authToken, refreshToken });
       } catch (error) {
         console.log(error);
         res.status(400).json({ success, errors: error });
@@ -179,7 +181,13 @@ module.exports = app => {
       try {
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECERT_KEY);
         const email = decoded.email;
-    
+        const tenantcode = decoded.tenantcode;
+        // await Auth.init(tenantcode);
+        const companyData = await Company.findByEmail(email);
+      let tCode = companyData?.tenantcode;
+      await Auth.init(tCode);
+  
+
         const userRec = await Auth.findByEmail(email); 
         if (!userRec) {
           return res.status(401).json({ success: false, error: "Invalid credentials, please log in again." });
@@ -218,7 +226,7 @@ module.exports = app => {
       if (errors.length !== 0) {
         return res.status(400).json({ errors: errors });
       }
-
+      await Auth.init(req.userinfo.tenantcode);
       let resultUser = await Auth.findById(req.userinfo.id);
 
       if (resultUser) {
@@ -242,12 +250,18 @@ module.exports = app => {
   });
 
   // Get user by Id
-  router.get("/users/:id", fetchUser,
-
+  router.get("/users/:id/:tenant", fetchUser,
     async (req, res) => {
       // #swagger.tags = ['Users']
       // #swagger.path = ['/api/auth/users/:id']
       try {
+        if(req.userinfo.userrole = 'SYS_ADMIN'){
+          console.log("req.userinfo")
+          await Auth.init(req.params.tenant);
+        }else{
+          console.log("req.userinforeq.userinforeq.userinforeq.userinfo")
+          await Auth.init(req.userinfo.tenantcode);
+        }
         const userRec = await Auth.findById(req.params.id);
 
         if (!userRec) {
@@ -288,7 +302,7 @@ module.exports = app => {
       ]);
 
       File.init(req.userinfo.tenantcode);
-
+      Auth.init(req.userinfo.tenantcode);
       const resultFile = await File.findByParentId(req.params.id);
 
       if (resultFile && resultFile.length > 0) {
@@ -314,6 +328,7 @@ module.exports = app => {
       const pdfreference = req?.files?.file;
       if (pdfreference) {
         const newVersionRecord = JSON.parse(JSON.parse(req.body.staffRecord));
+        await Auth.init(req.userinfo.tenantcode);
         const resultObj = await Auth.findById(req.userinfo.id);
 
         if (resultObj) {
@@ -370,7 +385,7 @@ module.exports = app => {
       if (req.body.hasOwnProperty("lastname")) { userRec.lastname = lastname; if (!lastname) { errors.push('Lastname is required') } };
       if (req.body.hasOwnProperty("email")) { userRec.email = email; if (!email) { errors.push('Email is required') } };
       if (req.body.hasOwnProperty("password")) { userRec.password = password; if (!password) { errors.push('Password is required') } };
-      
+     
       if (req.body.hasOwnProperty("whatsapp_number")) { userRec.whatsapp_number = whatsapp_number };
 
       if (req.body.hasOwnProperty("userrole")) { userRec.userrole = userrole };
@@ -381,7 +396,7 @@ module.exports = app => {
       if (errors.length !== 0) {
         return res.status(400).json({ errors: errors });
       }
-
+      await Auth.init(req.userinfo.tenantcode);
       const duplicateUser = await Auth.checkForDuplicate(email, whatsapp_number, req.params.id);
 
       if (duplicateUser) {
@@ -449,6 +464,7 @@ module.exports = app => {
 
       try {
         const userid = req.userinfo.id;
+        await Auth.init(req.userinfo.tenantcode);
         const userRec = await Auth.findById(userid);
 
         if (!userRec) {
@@ -472,6 +488,7 @@ module.exports = app => {
       // #swagger.tags = ['Users']
       // #swagger.path = ['/api/auth/users']
       try {
+        await Auth.init(req.userinfo.tenantcode);
 
         const userRec = await Auth.findAll(req.userinfo);
         if (!userRec) {
@@ -528,6 +545,7 @@ module.exports = app => {
       // #swagger.tags = ['Users']
       // #swagger.path = ['/api/auth/managers']
       try {
+        await Auth.init(req.userinfo.tenantcode);
         const userRecList = await Auth.getAllManager();
         if (!userRecList) {
           return res.status(400).json({ errors: "User not found" });

@@ -41,7 +41,7 @@ async function findById(id) {
 
 async function findAll(title) {
   let query = `SELECT *, concat(ow.firstname, ' ' , ow.lastname) ownername FROM ${this.schema}.message`;
-  query += " INNER JOIN public.user ow ON ow.id = ownerid ";
+  query += ` INNER JOIN ${this.schema}.user ow ON ow.id = ownerid `;
 
   if (title) {
     query += ` WHERE title LIKE '%${title}%'`;
@@ -55,7 +55,7 @@ async function findAll(title) {
 
 async function findAllMeetings(userinfo, today) {
   let query = `SELECT *, concat(ow.firstname, ' ' , ow.lastname) ownername FROM ${this.schema}.message`;
-  query += " INNER JOIN public.user ow ON ow.id = ownerid ";
+  query += ` INNER JOIN ${this.schema}.user ow ON ow.id = ownerid `;
 
   if (today) {
     query += ` WHERE type = 'Meeting' AND startdatetime::date = now()::date AND ownerid = $1`;
@@ -69,7 +69,7 @@ async function findAllMeetings(userinfo, today) {
 
 async function findAllToday() {
   let query = `SELECT *, concat(ow.firstname, ' ' , ow.lastname) ownername FROM ${this.schema}.message`;
-  query += " INNER JOIN public.user ow ON ow.id = ownerid ";
+  query += ` INNER JOIN ${this.schema}.user ow ON ow.id = ownerid `;
   query += ` WHERE createddate::date = now()::date`;
   query += " ORDER BY createddate DESC ";
   const result = await sql.query(query);
@@ -83,7 +83,7 @@ async function findAllUnread(userid) {
   query += `from ${this.schema}.usermessagealert msgalert `;
 
   query += `inner join ${this.schema}.message  on `;
-  query += `msgalert.messageid = message.id  inner join public.user  cu ON cu.Id = msgalert.createdbyid `;
+  query += `msgalert.messageid = message.id  inner join ${this.schema}.user  cu ON cu.Id = msgalert.createdbyid `;
   query += `where msgalert.userid = '${userid}' and `;
   query += `msgalert.status  = 'Unread'`;
   /*let query = `SELECT tsk.*, TO_CHAR(tsk.createddate, 'DD Mon, YYYY') date,`;
@@ -103,7 +103,7 @@ async function findAllUnread(userid) {
 
 async function findAllOpen(userinfo) {
   let query = `SELECT t.*, concat(ow.firstname, ' ' , ow.lastname) ownername FROM ${this.schema}.message t `;
-  query += " INNER JOIN public.user ow ON ow.id = ownerid ";
+  query += ` INNER JOIN ${this.schema}.user ow ON ow.id = ownerid `;
 
   query += ` WHERE status in ('Not Started', 'In Progress' , 'Waiting') AND extract (month from createddate) >= extract(month from now()) - 1 AND     extract (year from createddate) >= extract(year from now())`;
 
@@ -173,7 +173,7 @@ async function findByParentId(pid) {
   let query = `SELECT tsk.*, TO_CHAR(tsk.createddate, 'DD Mon, YYYY') date,`;
   query += " concat(cu.firstname, ' ' , cu.lastname) createdbyname ";
   query += ` FROM ${this.schema}.message tsk `;
-  query += " INNER JOIN public.user cu ON cu.Id = tsk.createdbyid ";
+  query += ` INNER JOIN ${this.schema}.user cu ON cu.Id = tsk.createdbyid `;
   try {
     const result = await sql.query(query + " WHERE tsk.parentid = $1 ORDER BY CREATEDDATE DESC", [pid]);
     if (result.rows.length > 0)

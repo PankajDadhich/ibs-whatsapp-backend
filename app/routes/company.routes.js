@@ -41,7 +41,7 @@ module.exports = app => {
 
   router.get("/:?", async (req, res) => {
     const { is_active } = req.query;
-
+    
     const companyResults = await Company.findAllCompany(is_active);
     if (!companyResults) {
       return res.status(200).json([]);
@@ -266,13 +266,13 @@ module.exports = app => {
   });
 
   router.post("/emailcheck", async (req, res) => {
-    const { email, userId } = req.body;
+    const { email, id } = req.body;
     if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
   
     try {
-      const emailResults = await Company.duplicateEmailCheck(email, userId);  
+      const emailResults = await Company.duplicateEmailCheck(email, id);  
       if (!emailResults) {
         return res.status(200).json({ success: false });  
       }

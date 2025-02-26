@@ -7,6 +7,7 @@
 const sql = require("./db.js");
 let schema = '';
 const moment = require("moment"); 
+const Company = require("../models/company.model.js");
 
 function init(schema_name) {
     this.schema = schema_name;
@@ -304,6 +305,10 @@ async function updateInvoiceAddTrans(invoice_id, record) {
 
 async function fetchCompanyAndUserByInvoice(id) {
   try {
+
+    const res = await sql.query(`SELECT COMP.TENANTCODE FROM PUBLIC.INVOICES INC JOIN PUBLIC.SUBSCRIPTIONS ON SUBSCRIPTIONS.ID = INC.SUBSCRIPTION_ID JOIN PUBLIC.COMPANY COMP ON SUBSCRIPTIONS.COMPANY_ID = COMP.ID WHERE INC.ID = '${id}'`);
+    let tCode =  res.rows[0].tenantcode;
+
     const result = await sql.query(`SELECT INC.*,
                                       COMP.ID AS COMPANY_ID,
                                       COMP.NAME AS COMPANY_NAME,
@@ -322,7 +327,7 @@ async function fetchCompanyAndUserByInvoice(id) {
                                       USR.LASTNAME,
                                       USR.PASSWORD,
                                       USR.EMAIL,
-                                      USR.PHONE,
+                                      USR.WHATSAPP_NUMBER,
                                       SUBSCRIPTIONS.PLAN_ID,
                                       SUBSCRIPTIONS.START_DATE,
                                       SUBSCRIPTIONS.END_DATE,
@@ -331,7 +336,7 @@ async function fetchCompanyAndUserByInvoice(id) {
                                     FROM PUBLIC.INVOICES INC
                                     JOIN PUBLIC.SUBSCRIPTIONS ON SUBSCRIPTIONS.ID = INC.SUBSCRIPTION_ID 
                                     JOIN PUBLIC.COMPANY COMP ON SUBSCRIPTIONS.COMPANY_ID = COMP.ID
-                                    JOIN PUBLIC.USER USR ON USR.COMPANYID = COMP.ID
+                                    JOIN ${tCode}.USER USR ON USR.COMPANYID = COMP.ID
                                     JOIN PUBLIC.PLANS ON PLANS.ID = SUBSCRIPTIONS.PLAN_ID
                                     WHERE INC.ID = '${id}'`);
     return result.rows;
@@ -358,61 +363,86 @@ async function updateInvoice(invoice_id, record) {
   }
 }
 
+// async function findSubscriptionsForRenewal(end_date) {
+//   try {
+    
+//     const result = await sql.query(`SELECT 
+//                                       subscriptions.*,
+//                                       users.firstname,
+//                                       users.lastname,
+//                                       users.email,
+//                                       invoices.total_amount,
+//                                       invoices.other_name,
+//                                       company.tenantcode,
+//                                       plans.name AS plan_name,
+//                                       plans.number_of_whatsapp_setting,
+//                                       plans.number_of_users,
+//                                       CASE
+//                                         WHEN subscriptions.validity = 1 THEN plans.pricepermonth
+//                                         ELSE plans.priceperyear
+//                                       END 
+//                                       AS plan_price
+//                                     FROM public.subscriptions 
+//                                     JOIN public.invoices ON invoices.subscription_id = subscriptions.id
+//                                     JOIN public.plans ON plans.id = subscriptions.plan_id
+//                                     JOIN public.company ON company.id = subscriptions.company_id
+//                                     JOIN public.user AS users ON users.companyid = company.id
+//                                     LEFT JOIN public.subscriptions next_sub ON subscriptions.end_date = next_sub.start_date - INTERVAL '1 DAY'
+//                                     WHERE subscriptions.end_date = $1 AND USERS.USERROLE = 'ADMIN'
+//                                     AND next_sub.start_date IS NULL`, [end_date]);
+//     if (result.rows.length > 0) return result.rows;
+//   } catch (error) {
+//     throw error;
+//   }
+//   return null;
+// }
+
 async function findSubscriptionsForRenewal(end_date) {
   try {
-    // const result = await sql.query(`SELECT subscriptions.*, invoices.total_amount, invoices.other_name FROM public.subscriptions JOIN public.invoices ON invoices.subscription_id = subscriptions.id WHERE end_date=$1`, [end_date]);
-    // const result = await sql.query(`SELECT 
-    //                                   subscriptions.*,
-    //                                   invoices.total_amount,
-    //                                   invoices.other_name,
-    //                                   company.tenantcode,
-    //                                   plans.name AS plan_name,
-    //                                   plans.number_of_whatsapp_setting,
-    //                                   plans.number_of_users,
-    //                                   CASE
-    //                                     WHEN subscriptions.validity = 1 THEN plans.pricepermonth
-    //                                     ELSE plans.priceperyear
-    //                                   END 
-    //                                   AS plan_price
-    //                                 FROM public.subscriptions 
-    //                                 JOIN public.invoices ON invoices.subscription_id = subscriptions.id
-    //                                 JOIN public.plans ON plans.id = subscriptions.plan_id
-    //                                 JOIN public.company ON company.id = subscriptions.company_id
-    //                                 LEFT JOIN public.subscriptions next_sub
-    //                                 ON subscriptions.end_date = next_sub.start_date - INTERVAL '1 DAY'
-    //                                 WHERE subscriptions.end_date = $1
-    //                                 AND subscriptions.validity != 5
-    //                                 AND next_sub.start_date IS NULL`, [end_date]);
-    const result = await sql.query(`SELECT 
-                                      subscriptions.*,
-                                      users.firstname,
-                                      users.lastname,
-                                      users.email,
-                                      invoices.total_amount,
-                                      invoices.other_name,
-                                      company.tenantcode,
-                                      plans.name AS plan_name,
-                                      plans.number_of_whatsapp_setting,
-                                      plans.number_of_users,
-                                      CASE
-                                        WHEN subscriptions.validity = 1 THEN plans.pricepermonth
-                                        ELSE plans.priceperyear
-                                      END 
-                                      AS plan_price
-                                    FROM public.subscriptions 
-                                    JOIN public.invoices ON invoices.subscription_id = subscriptions.id
-                                    JOIN public.plans ON plans.id = subscriptions.plan_id
-                                    JOIN public.company ON company.id = subscriptions.company_id
-                                    JOIN public.user AS users ON users.companyid = company.id
-                                    LEFT JOIN public.subscriptions next_sub ON subscriptions.end_date = next_sub.start_date - INTERVAL '1 DAY'
-                                    WHERE subscriptions.end_date = $1 AND USERS.USERROLE = 'ADMIN'
-                                    AND next_sub.start_date IS NULL`, [end_date]);
-    if (result.rows.length > 0) return result.rows;
+      let tenantcodes = await Company.getSourceSchemas(); // Fetch tenant schema names
+      let queries = [];
+
+      for (let tenantcode of tenantcodes) {
+          let query = `
+              SELECT 
+                  subscriptions.*,
+                  users.firstname,
+                  users.lastname,
+                  users.email,
+                  invoices.total_amount,
+                  invoices.other_name,
+                  company.tenantcode,
+                  plans.name AS plan_name,
+                  plans.number_of_whatsapp_setting,
+                  plans.number_of_users,
+                  CASE
+                      WHEN subscriptions.validity = 1 THEN plans.pricepermonth
+                      ELSE plans.priceperyear
+                  END AS plan_price
+              FROM public.subscriptions 
+              JOIN public.invoices ON invoices.subscription_id = subscriptions.id
+              JOIN public.plans ON plans.id = subscriptions.plan_id
+              JOIN public.company ON company.id = subscriptions.company_id
+              JOIN ${tenantcode}.user AS users ON users.companyid = company.id
+              LEFT JOIN public.subscriptions next_sub 
+                  ON subscriptions.end_date = next_sub.start_date - INTERVAL '1 DAY'
+              WHERE subscriptions.end_date = $1 
+                AND users.userrole = 'ADMIN'
+                AND next_sub.start_date IS NULL
+          `;
+          queries.push(sql.query(query, [end_date])); // Add query promise to array
+      }
+
+      // Execute all queries
+      let results = await Promise.all(queries);
+
+      // Flatten and return results
+      return results.flatMap(result => result.rows);
   } catch (error) {
-    throw error;
+      throw error;
   }
-  return null;
 }
+
 
 async function hasExistingInvoices(companyId) {
   try {

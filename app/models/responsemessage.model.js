@@ -13,12 +13,12 @@ function init(schema_name) {
 
 async function getAllRecords(userinfo) {
     let query = `SELECT rm.* FROM ${this.schema}.auto_response_message rm `;
-    query += " INNER JOIN public.user cu ON cu.Id = rm.createdbyid ";
-    query += " INNER JOIN public.user mu ON mu.Id = rm.lastmodifiedbyid ";
+    query += ` INNER JOIN ${this.schema}.user cu ON cu.Id = rm.createdbyid `;
+    query += ` INNER JOIN ${this.schema}.user mu ON mu.Id = rm.lastmodifiedbyid `;
 
     let result = null;
     if (userinfo.userrole === 'USER' || userinfo.userrole === 'ADMIN') {
-        query += " WHERE rm.createdbyid = $1 OR rm.createdbyid in (SELECT id FROM public.user team where managerid = $1)"
+        query += ` WHERE rm.createdbyid = $1 OR rm.createdbyid in (SELECT id FROM ${this.schema}.user team where managerid = $1)`
         query += " ORDER BY createddate DESC ";
         result = await sql.query(query, [userinfo.id]);
     }

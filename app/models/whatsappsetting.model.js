@@ -25,12 +25,12 @@ async function findById(id) {
 async function getAllWhatsAppSetting(userinfo) {
 console.log("userinfo",userinfo)
     let query = `SELECT wh.* FROM ${this.schema}.whatsapp_setting wh`
-    query += " INNER JOIN public.user cu ON cu.Id = wh.createdbyid ";
-    query += " INNER JOIN public.user mu ON mu.Id = wh.lastmodifiedbyid ";
+    query += ` INNER JOIN ${this.schema}.user cu ON cu.Id = wh.createdbyid `;
+    query += ` INNER JOIN ${this.schema}.user mu ON mu.Id = wh.lastmodifiedbyid `;
 
     let result = null;
     if (userinfo.userrole === 'ADMIN') {
-        query += " WHERE (wh.createdbyid = $1 OR wh.createdbyid in (SELECT id FROM public.user team where managerid = $1)) "
+        query += ` WHERE (wh.createdbyid = $1 OR wh.createdbyid in (SELECT id FROM ${this.schema}.user team where managerid = $1)) `
         result = await sql.query(query, [userinfo.id]);
     }else if(userinfo.userrole === 'USER' ){
         query += " WHERE wh.phone = ANY($1::text[]) ";
@@ -241,7 +241,7 @@ async function getWhatsupBillingCost(phoneNumber, startDate=null, endDate=null) 
     const { access_token: whatsapptoken, end_point_url, whatsapp_business_account_id } = await getWhatsAppSettingRecord(this.schema, phoneNumber);
     // const url = `${end_point_url}${whatsapp_business_account_id}/message_templates`;
     
-    const url = `https://graph.facebook.com/v22.0/${whatsapp_business_account_id}?fields=conversation_analytics.start(${sDate}).end(${eDate}).granularity(DAILY).phone_numbers([]).dimensions(["CONVERSATION_CATEGORY","CONVERSATION_TYPE","COUNTRY","PHONE"])&access_token=${whatsapptoken}`
+    const url = `${end_point_url}${whatsapp_business_account_id}?fields=conversation_analytics.start(${sDate}).end(${eDate}).granularity(DAILY).phone_numbers([]).dimensions(["CONVERSATION_CATEGORY","CONVERSATION_TYPE","COUNTRY","PHONE"])&access_token=${whatsapptoken}`
 
     try {
         let response = await fetch(url, {
@@ -254,14 +254,33 @@ async function getWhatsupBillingCost(phoneNumber, startDate=null, endDate=null) 
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to upload image: ${response.statusText} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+        return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 }
 

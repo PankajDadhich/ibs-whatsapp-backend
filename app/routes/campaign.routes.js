@@ -93,9 +93,13 @@ module.exports = app => {
             campaignRecord.start_date = start_date; if (!start_date) { start_date; errors.push('start_date is required') }
         };
 
+        // if (req.body.hasOwnProperty("group_ids")) {
+        //     campaignRecord.group_ids = group_ids
+        // }
         if (req.body.hasOwnProperty("group_ids")) {
-            campaignRecord.group_ids = group_ids
+            campaignRecord.group_ids = Array.isArray(group_ids) ? group_ids : [];
         }
+        
 
         if (req.body.hasOwnProperty("business_number")) {
             campaignRecord.business_number = business_number
@@ -258,7 +262,25 @@ module.exports = app => {
             return res.status(500).json({ errors: 'Internal Server Error' });
         }
     });
-
+    router.post("/campaign/params", fetchUser, async (req, res) => {
+        campaignModel.init(req.userinfo.tenantcode);
+        const result = await campaignModel.createparamsRecord(req.body, req.userinfo.id);
+        if (result) {
+            res.status(200).json({ success: true, record: result });
+        } else {
+            res.status(400).json({ success: false, errors: "Bad request" });
+        }
+    });
+    
+    router.get("/campaign/params/:id", fetchUser, async (req, res) => {
+        campaignModel.init(req.userinfo.tenantcode);
+        const result = await campaignModel.getparamsRecord(req.params.id);
+        if (result) {
+            res.status(200).json({ success: true, record: result });
+        } else {
+            res.status(400).json({ success: false, errors: "Bad request" });
+        }
+    });
 
     app.use(process.env.BASE_API_URL + '/api/whatsapp', router);
 };

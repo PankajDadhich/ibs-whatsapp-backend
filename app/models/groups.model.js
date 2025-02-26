@@ -31,7 +31,7 @@ async function getRecordById(groupId) {
                 LEFT JOIN 
                     ${this.schema}.group_members gm ON gm.group_id = grp.id 
                 LEFT JOIN 
-                    public.user ur ON gm.member_id = ur.id  
+                    ${this.schema}.user ur ON gm.member_id = ur.id  
                 LEFT JOIN 
                     ${this.schema}.lead ld ON gm.member_id = ld.id
                 WHERE
@@ -144,7 +144,7 @@ async function findAllGroups(userinfo, status) {
                 LEFT JOIN 
                     ${this.schema}.group_members gm ON gm.group_id = grp.id 
                 LEFT JOIN 
-                    public.user ur ON gm.member_id = ur.id  
+                    ${this.schema}.user ur ON gm.member_id = ur.id  
                 LEFT JOIN 
                     ${this.schema}.lead ld ON gm.member_id = ld.id
                 `;
@@ -156,9 +156,9 @@ async function findAllGroups(userinfo, status) {
 
     if (userinfo.userrole === 'USER' || userinfo.userrole === 'ADMIN') {
         if (values.length > 0) {
-            query += ` AND (grp.createdbyid = $${values.length + 1})   OR grp.createdbyid IN (  SELECT id FROM public.user team WHERE managerid = $${values.length + 1})`;
+            query += ` AND (grp.createdbyid = $${values.length + 1})   OR grp.createdbyid IN (  SELECT id FROM ${this.schema}.user team WHERE managerid = $${values.length + 1})`;
         } else {
-            query += ` WHERE (grp.createdbyid = $${values.length + 1})  OR grp.createdbyid IN (  SELECT id FROM public.user team WHERE managerid = $${values.length + 1})`;
+            query += ` WHERE (grp.createdbyid = $${values.length + 1})  OR grp.createdbyid IN (  SELECT id FROM ${this.schema}.user team WHERE managerid = $${values.length + 1})`;
         }
         values.push(userinfo.id);
     }

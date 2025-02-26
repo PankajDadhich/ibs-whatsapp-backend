@@ -129,6 +129,18 @@ module.exports = app => {
 
   });
 
+  router.get("/setting/:name", fetchUser, async (req, res) => {
+
+    let result = await Common.getSetting(req.params.name);
+    if (result) {
+      res.status(200).json({ success: true, setting: result });
+    } else {
+      res.status(400).json({ success: false });
+    }
+
+  });
+
+
 
 
   router.post("/chatgpt", async (req, res) => {

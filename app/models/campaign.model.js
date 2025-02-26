@@ -54,13 +54,13 @@ async function findById(id) {
                             c.id = f.parentid
                     `;
 
-        query += " INNER JOIN public.user cu ON cu.Id = c.createdbyid ";
-        query += " INNER JOIN public.user mu ON mu.Id = c.lastmodifiedbyid ";
+        query += ` INNER JOIN ${this.schema}.user cu ON cu.Id = c.createdbyid `;
+        query += ` INNER JOIN ${this.schema}.user mu ON mu.Id = c.lastmodifiedbyid `;
 
 
         let result = null;
         if (userinfo.userrole === 'USER' || userinfo.userrole === 'ADMIN') {
-            query += " WHERE (c.createdbyid = $1 OR c.createdbyid IN (SELECT id FROM public.user team where managerid = $1)) AND c.business_number = $2 ";
+            query += ` WHERE (c.createdbyid = $1 OR c.createdbyid IN (SELECT id FROM ${this.schema}.user team where managerid = $1)) AND c.business_number = $2 `;
             query += `GROUP BY  c.id, c.name, c.template_name, c.type, c.status, c.start_date,  c.createdbyid, f.id, f.title, f.filetype, f.filesize, f.description`;
             query += " ORDER BY c.createddate DESC ";
             result = await sql.query(query, [userinfo.id,business_number]);
@@ -116,5 +116,31 @@ function buildUpdateQuery(id, cols, schema) {
     return query.join(' ');
 }
 
+async function createparamsRecord(reqBody, userid) {
+    try {
+        const { campaign_id, body_text_params, msg_history_id, file_id, whatsapp_number_admin } = reqBody;
+        const result = await sql.query(`INSERT INTO ${this.schema}.campaign_template_params(
+     campaign_id, body_text_params, msg_history_id, file_id, whatsapp_number_admin)
+    VALUES ($1, $2, $3, $4, $5)  RETURNING *`,[ campaign_id, body_text_params, msg_history_id, file_id, whatsapp_number_admin ]);
+console.log("result.rows[0]->",result.rows[0]);
 
-module.exports = { findById, getRecords, createRecord, updateById, init };
+        return result.rows.length > 0 ? result.rows[0] : null;
+
+    } catch (error) {
+        console.log('##ERROR', error);
+    }
+}
+async function getparamsRecord(id) {
+    try {        
+        const result = await sql.query(`SELECT id, campaign_id, body_text_params, msg_history_id, file_id, whatsapp_number_admin
+    FROM ${this.schema}.campaign_template_params where campaign_id = $1 or msg_history_id =$1`,[id]);
+
+        return result.rows.length > 0 ? result.rows[0] : null;
+
+    } catch (error) {
+        console.log('##ERROR', error);
+    }
+}
+
+
+module.exports = { findById, getRecords, createRecord, updateById, init, createparamsRecord,getparamsRecord };

@@ -84,7 +84,7 @@ module.exports = app => {
     try {
       Lead.init(req.userinfo.tenantcode);
 
-      const { firstname, lastname, company, leadsource, leadstatus, rating, conid, salutation, phone, email, fax, whatsapp_number,
+      const { firstname, lastname, company, leadsource, leadstatus, rating, conid, salutation,  email, fax, whatsapp_number,
         websit, industry, title, annualrevenu, street, city, state, country, zipcode, assignrole, description, lastmodifiedbyid, ownerid, lostreason, amount, paymentmodel, paymentterms, iswon } = req.body;
       const errors = [];
       const leadRec = {};
@@ -97,7 +97,7 @@ module.exports = app => {
       if (req.body.hasOwnProperty("rating")) { leadRec.rating = rating };
       if (req.body.hasOwnProperty("conid")) { leadRec.conid = conid };
       if (req.body.hasOwnProperty("salutation")) { leadRec.salutation = salutation };
-      if (req.body.hasOwnProperty("phone")) { leadRec.phone = phone; if (!phone) { phone; errors.push('Phone is required') } };
+      // if (req.body.hasOwnProperty("phone")) { leadRec.phone = phone; if (!phone) { phone; errors.push('Phone is required') } };
       if (req.body.hasOwnProperty("email")) { leadRec.email = email };
       if (req.body.hasOwnProperty("fax")) { leadRec.fax = fax };
       if (req.body.hasOwnProperty("websit")) { leadRec.websit = websit };
@@ -149,6 +149,72 @@ module.exports = app => {
     }
 
   });
+
+  
+  router.post(
+    "/import",
+    fetchUser,
+    [
+        body("leads").isArray().withMessage("Leads must be an array."),
+        body("leads.*.firstname", "First Name is required").isLength({ min: 1 }),
+        body("leads.*.lastname", "Last Name is required").isLength({ min: 1 }),
+        body("leads.*.whatsapp_number", "Valid WhatsApp number is required").isLength({ min: 10 }),
+    ],
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { leads } = req.body; 
+        if (!Array.isArray(leads) || leads.length === 0) {
+            return res.status(400).json({ error: "No leads provided." });
+        }
+
+        const userId = req.userinfo.id; 
+        const createdLeads = [];
+        const skippedLeads = [];
+
+        Lead.init(req.userinfo.tenantcode);
+        try {
+            for (const lead of leads) {
+          
+            if (lead.whatsapp_number && lead.whatsapp_number.toString().length === 10) {
+                lead.whatsapp_number = `91${lead.whatsapp_number.toString()}`;
+            }
+                const isDuplicate = await Lead.checkWhatsAppNumberExists(lead.whatsapp_number, userId);
+                console.log("isDuplicate",isDuplicate);
+                if (isDuplicate) {
+                    skippedLeads.push(lead);
+                }  else {
+                  const newLead = { 
+                      ...lead,
+                      createdById: userId,  
+                      lastModifiedById: userId,
+                      ownerid: userId,
+                      leadstatus: 'Open - Not Contacted'
+                  };
+          
+                  const createdLead = await Lead.create(newLead, userId);
+                  createdLeads.push(createdLead);
+              }
+          // else {
+          //           const newLead = await Lead.create({ ...lead, userId });
+          //           createdLeads.push(newLead);
+          //       }
+            }
+            res.status(200).json({
+                success: true,
+                message: "Lead import process completed.",
+                createdLeads,
+                skippedLeads,
+            });
+        } catch (error) {
+            console.error("Error importing leads:", error);
+            res.status(500).json({ error: "An error occurred while importing leads." });
+        }
+    }
+);
 
   // ................................ Delete lead ................................
   router.delete("/:id", fetchUser, async (req, res) => {

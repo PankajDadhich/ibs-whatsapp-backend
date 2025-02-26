@@ -38,7 +38,8 @@ module.exports = app => {
             return res.status(200).json({ errors: "Email already exists" });
           }
         }
-        const formattedCompany = `ibs_${req.body.company.toLowerCase().replace(/\s+/g, '_')}`;
+        // const formattedCompany = `${req.body.company.toLowerCase().replace(/\s+/g, '_')}`;
+        const formattedCompany = `${req.body.company.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_')}`;
 
         if (formattedCompany) {
           const result = await Company.getSourceSchemas();
@@ -47,8 +48,9 @@ module.exports = app => {
           }
         }
         if (req.body.status === 'Closed - Converted') {
+          const password = req.body.company.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '') + '#@' + Math.floor(Math.random() * 1000 + 100);
 
-          const password = 'ibs' + req.body.company.toLowerCase().replace(/\s+/g, '') + '#@' + Math.floor(Math.random() * 1000 + 100);
+          // const password = req.body.company.toLowerCase().replace(/\s+/g, '') + '#@' + Math.floor(Math.random() * 1000 + 100);
           const salt = bcrypt.genSaltSync(10);
           const cryptPassword = bcrypt.hashSync(password, salt);
           const reqBody = {
@@ -74,7 +76,7 @@ module.exports = app => {
               lastname: req.body.last_name,
               password: cryptPassword,
               email: req.body.email,
-              phone: req.body.mobile_no,
+              createCompanyWithUser: req.body.mobile_no,
             },
             invoice: {
               plan: req.body.invoice.planid,
@@ -126,8 +128,12 @@ module.exports = app => {
           return res.status(400).json({ errors: "Email already exists" });
         }
       }
-      const formattedCompany = `ibs_${req.body.company.toLowerCase().replace(/\s+/g, '_')}`;
+
+      const formattedCompany = `${req.body.company.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_')}`;
       if (formattedCompany) {
+
+      // const formattedCompany = `ibs_${req.body.company.toLowerCase().replace(/\s+/g, '_')}`;
+      // if (formattedCompany) {
         const result = await Company.getSourceSchemas();
         if (result.includes(formattedCompany)) {
           return res.status(400).json({ errors: "A company is already registered with this name." });
@@ -135,8 +141,9 @@ module.exports = app => {
       }
 
       if (req.body.status === 'Closed - Converted') {
-
-        const password = 'ibs' + req.body.company.toLowerCase().replace(/\s+/g, '') + '#@' + Math.floor(Math.random() * 1000 + 100);
+        const password = req.body.company.toLowerCase().replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '') + '#@' + Math.floor(Math.random() * 1000 + 100);
+        
+        // const password = 'ibs' + req.body.company.toLowerCase().replace(/\s+/g, '') + '#@' + Math.floor(Math.random() * 1000 + 100);
         const salt = bcrypt.genSaltSync(10);
         const cryptPassword = bcrypt.hashSync(password, salt);
 
@@ -163,7 +170,7 @@ module.exports = app => {
             lastname: req.body.last_name,
             password: cryptPassword,
             email: req.body.email,
-            phone: req.body.mobile_no,
+            whatsapp_number: req.body.mobile_no,
           },
           invoice: {
             plan: req.body.invoice.planid,

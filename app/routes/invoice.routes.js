@@ -109,6 +109,7 @@ module.exports = (app) => {
 
   router.get("/i/:id", fetchUser, async (req, res) => {
     const id = req.params.id;
+    await Invoice.init(req.userinfo.tenantcode);
     const response = await Invoice.fetchCompanyAndUserByInvoice(id);
     // console.log('I response --- ', response);
 
@@ -134,7 +135,7 @@ module.exports = (app) => {
           lastname: response[0].lastname,
           password: response[0].password,
           email: response[0].email,
-          phone: response[0].phone
+          whatsapp_number: response[0].whatsapp_number
         },
         invoice: {
           id: response[0].id,
@@ -197,32 +198,35 @@ module.exports = (app) => {
 
       let to = companyData.adminemail;
       let subject = "Payment Confirmation";
-      let body = `<html><body style="font-family: system-ui;"><div style="padding: 0px 10px;background-color: #F9F9F9;border: 2px solid #E0E0E0;width: 75%; display: block;margin: 0 auto;"><p>Dear${' '+companyData.firstname+' '+companyData.lastname},</p><p>Thank you for your payment!</p><p>We are pleased to inform you that your payment of ${invoiceData.amount} for <b>WhatsApp Bulkify</b> has been successfully processed on ${moment(invoiceData.date).format('DD-MM-YYYY')}.</p><p>Please find your invoice attached to this email for your records.</p><h4>Payment Details:</h4><ul type="disc"><li>Payment Amount: ${invoiceData.amount}</li><li>Payment Date: ${moment(invoiceData.date).format('DD-MM-YYYY')}</li><li>Payment Method: ${invoiceData.payment_method}</li>${invoiceData.payment_method !== 'cash'? `<li>Transaction ID: ${invoiceData.transaction_cheque_no || ''}</li>`: ''}
-      </ul>${invoiceData.payment_method !== 'cash'? `<h4>Order Details:</h4><ul type="disc"><li>Order ID: ${invoiceData.order_id || ''}</li><li>Product/Service: <b>WhatsApp Bulkify</b></li></ul>`: ''}<h4>Order Details:</h4><ul type="disc"><li>Order ID: ${invoiceData.order_id}</li><li>Product/Service: <b>WhatsApp Bulkify</b></li></ul><p>If you have any questions or need further assistance, please feel free to contact us at contact@ibirdsservices.com or call us at 9876543210.</p><p>Thank you for choosing iBirds Software Services Pvt. Ltd.. We appreciate your business!</p><p>Best regards,<br>iBirds Software Services Pvt. Ltd.<p></div></body></html>`;
+      let body = `<html><body style="font-family: system-ui;"><div style="padding: 0px 10px;background-color: #F9F9F9;border: 2px solid #E0E0E0;width: 75%; display: block;margin: 0 auto;"><p>Dear${' '+companyData.firstname+' '+companyData.lastname},</p><p>Thank you for your payment!</p><p>We are pleased to inform you that your payment of ${invoiceData.amount} for <b>Watconnect</b> has been successfully processed on ${moment(invoiceData.date).format('DD-MM-YYYY')}.</p><p>Please find your invoice attached to this email for your records.</p><h4>Payment Details:</h4><ul type="disc"><li>Payment Amount: ${invoiceData.amount}</li><li>Payment Date: ${moment(invoiceData.date).format('DD-MM-YYYY')}</li><li>Payment Method: ${invoiceData.payment_method}</li>${invoiceData.payment_method !== 'cash'? `<li>Transaction ID: ${invoiceData.transaction_cheque_no || ''}</li>`: ''}
+      </ul>${invoiceData.payment_method !== 'cash'? `<h4>Order Details:</h4><ul type="disc"><li>Order ID: ${invoiceData.order_id || ''}</li><li>Product/Service: <b>Watconnect</b></li></ul>`: ''}<h4>Order Details:</h4><ul type="disc"><li>Order ID: ${invoiceData.order_id}</li><li>Product/Service: <b>Watconnect</b></li></ul><p>If you have any questions or need further assistance, please feel free to contact us at contact@ibirdsservices.com or call us at 9876543210.</p><p>Thank you for choosing iBirds Software Services Pvt. Ltd.. We appreciate your business!</p><p>Best regards,<br>iBirds Software Services Pvt. Ltd.<p></div></body></html>`;
 
-      const data = {
-        name: companyData.firstname+' '+companyData.lastname,
-        amount: invoiceData.amount,
-        date: moment(invoiceData.date).format('DD-MM-YYYY'),
-        payment_method: invoiceData.payment_method,
-        transaction_cheque_no: invoiceData.transaction_cheque_no,
-        order_id: invoiceData.order_id,
-      }
+      // const data = {
+      //   name: companyData.firstname+' '+companyData.lastname,
+      //   amount: invoiceData.amount,
+      //   date: moment(invoiceData.date).format('DD-MM-YYYY'),
+      //   payment_method: invoiceData.payment_method,
+      //   transaction_cheque_no: invoiceData.transaction_cheque_no,
+      //   order_id: invoiceData.order_id,
+      // }
 
       if (isFirstInvoice) {
         try {
-          const password = 'ibs' + companyData.company_name.toLowerCase().replace(/\s+/g, '') + '#@' + Math.floor(Math.random() * 1000 + 100);
+          const password =  companyData.company_name.toLowerCase().replace(/\s+/g, '') + '#$@' + Math.floor(Math.random() * 1000 + 100);
           const salt = bcrypt.genSaltSync(10);
           const cryptPassword = bcrypt.hashSync(password, salt);
       
           let userRec = {
             password: cryptPassword,
           };
-      
-          await Auth.updateById(companyData.user_id, userRec);
+          Auth.init(companyData.tenantcode);
+         const resultpassword =  await Auth.updateById(companyData.user_id, userRec);
+         console.log("resultpassword",resultpassword);
           const emailData = {
+            name: companyData.tenantcode,
             username: companyData.adminemail,
             password: password,
+            url: process.env.BASE_URL
           };
       
           await Mailer.sendEmail(companyData.adminemail, emailData, null, 'register_mail');
@@ -232,6 +236,18 @@ module.exports = (app) => {
         }
       }
       
+
+      const data = {
+        name: companyData.firstname+' '+companyData.lastname,
+        amount: invoiceData.amount,
+        date: moment(invoiceData.date).format('DD-MM-YYYY'),
+        payment_method: invoiceData.payment_method || '--',
+        transaction_cheque_no: invoiceData.transaction_cheque_no || '--',
+        order_id: invoiceData.order_id || '--',
+      }
+
+      const result = await Mailer.sendEmail(to, data, '', "complete_invoice");
+
       return res.status(200).json({ success: true, message: "Transaction Created successfully" });
     }
     return res.status(200).json(result);

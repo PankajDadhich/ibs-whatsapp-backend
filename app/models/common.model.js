@@ -29,7 +29,7 @@ async function fetchCompanyInfo(companyid) {
 
 
 async function fetchSystemAdminId(tenantcode) {
-  const result = await sql.query(`SELECT u.id from public.user u LEFT JOIN public.company c ON u.companyid = c.id WHERE tenantcode = $1 AND u.userrole ='SYS_ADMIN' AND u.isactive=true limit 1`, [tenantcode]);
+  const result = await sql.query(`SELECT u.id from ${this.schema}.user u LEFT JOIN public.company c ON u.companyid = c.id WHERE tenantcode = $1 AND u.userrole ='SYS_ADMIN' AND u.isactive=true limit 1`, [tenantcode]);
   if (result.rows.length > 0)
     return result.rows[0].id;
 
@@ -44,7 +44,7 @@ async function leadCount(userinfo) {
   let result = ''
   let query = `SELECT count(*) total FROM ${this.schema}.lead `;
   if(userinfo.userrole !== "SYS_ADMIN" ){
-    query+= 'where createdbyid = $1  OR createdbyid IN (  SELECT id FROM public.user team WHERE managerid = $1) OR ownerid = $1 ';
+    query+= `where createdbyid = $1  OR createdbyid IN (  SELECT id FROM ${this.schema}.user team WHERE managerid = $1) OR ownerid = $1 `;
     result = await sql.query(query, [userinfo.id]);
   }else{
     result = await sql.query(query);
@@ -61,7 +61,7 @@ async function countActiveGroups(userinfo) {
   let result = ''
   let query = `SELECT count(*) total FROM ${this.schema}.groups WHERE status=true `;
   if(userinfo.userrole !== "SYS_ADMIN" ){
-    query+= 'AND createdbyid = $1  OR createdbyid IN (  SELECT id FROM public.user team WHERE managerid = $1)';
+    query+= `AND createdbyid = $1  OR createdbyid IN (  SELECT id FROM ${this.schema}.user team WHERE managerid = $1)`;
     result = await sql.query(query, [userinfo.id]);
   }else{
     result = await sql.query(query);
@@ -77,7 +77,7 @@ async function autoResponseCount(userinfo) {
   let result = '';
   let query = `SELECT count(*) total FROM ${this.schema}.auto_response_message `;
   if(userinfo.userrole !== 'SYS_ADMIN'){
-    query+= 'WHERE createdbyid = $1 OR createdbyid in (SELECT id FROM public.user team where managerid = $1)';
+    query+= `WHERE createdbyid = $1 OR createdbyid in (SELECT id FROM ${this.schema}.user team where managerid = $1)`;
     result = await sql.query(query, [userinfo.id]);
   }else{
     result = await sql.query(query);
@@ -108,7 +108,18 @@ async function campaignStatusCount(userid, business_number) {
   return statusCount;
 };
 
+async function getSetting(name) {
+  let result = ''
+  let query = `SELECT * FROM public.settings WHERE name = $1`;
+  result = await sql.query(query,[name]);
+   
+  if (result.rows.length > 0)
+    return result.rows[0];
+  return null;
+};
+
+
 module.exports = {
   fetchSystemAdminId, findCompanySetting, leadCount, campaignStatusCount, autoResponseCount, fetchCompanyInfo,
-  countActiveGroups, init
+  countActiveGroups, getSetting, init
 };

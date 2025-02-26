@@ -42,7 +42,8 @@ app.get("/swp", (req, res) => {
 // set port, listen for requests
 const PORT = process.env.PORT || 4004;
 const server = http.createServer(app);
-const io = require("socket.io")(server, { path: '/ibs/socket.io' });
+const io = require("socket.io")(server, { path: '/swp/socket.io' });
+
 // const io = require("socket.io")(server, {
 //   path: '/ibs/socket.io',
 //   cors: {
@@ -57,7 +58,11 @@ io.on("connection", (socket) => {
     socket.join(userData.id);
     console.log('connected to server', userData.id);
     socket.emit("connected");
-  })
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`User disconnected: ${socket.id}`);
+  });
 })
 
 

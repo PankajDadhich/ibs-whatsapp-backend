@@ -11,13 +11,27 @@ function init(schema_name) {
   this.schema = schema_name;
 }
 
+// async function insertFileRecords(newFile, userid) {
+
+//   const result = await sql.query(`INSERT INTO ${this.schema}.file ( title, filetype, filesize, description, parentid, createdbyid, lastmodifiedbyid)  VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+//     [newFile.title, newFile.filetype, newFile.filesize, newFile.description, newFile.parentid, userid, userid]);
+
+//   return result.rows.length > 0 ? result.rows[0] : null;
+// }
+
 async function insertFileRecords(newFile, userid) {
 
-  const result = await sql.query(`INSERT INTO ${this.schema}.file ( title, filetype, filesize, description, parentid, createdbyid, lastmodifiedbyid)  VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-    [newFile.title, newFile.filetype, newFile.filesize, newFile.description, newFile.parentid, userid, userid]);
+  const parentId = newFile.parentid === "null" || !newFile.parentid ? null : newFile.parentid;
+
+  const result = await sql.query(
+    `INSERT INTO ${this.schema}.file (title, filetype, filesize, description, parentid, createdbyid, lastmodifiedbyid)  
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+    [newFile.title, newFile.filetype, newFile.filesize, newFile.description, parentId, userid, userid]
+  );
 
   return result.rows.length > 0 ? result.rows[0] : null;
 }
+ 
 
 
 async function findByParentId(id) {
@@ -25,8 +39,8 @@ async function findByParentId(id) {
   query += " concat(cu.firstname, ' ' , cu.lastname) createdbyname,  ";
   query += " concat(mu.firstname, ' ' , mu.lastname) lastmodifiedbyname  ";
   query += ` FROM ${this.schema}.file fl `;
-  query += " INNER JOIN public.user cu ON cu.Id = fl.createdbyid ";
-  query += " INNER JOIN public.user mu ON mu.Id = fl.lastmodifiedbyid ";
+  query += ` INNER JOIN ${this.schema}.user cu ON cu.Id = fl.createdbyid `;
+  query += ` INNER JOIN ${this.schema}.user mu ON mu.Id = fl.lastmodifiedbyid `;
   const result = await sql.query(query + 'WHERE fl.parentid = $1', [id]);
 
   if (result.rows.length > 0)
@@ -50,8 +64,8 @@ async function findById(id) {
   query += " concat(cu.firstname, ' ' , cu.lastname) createdbyname,  ";
   query += " concat(mu.firstname, ' ' , mu.lastname) lastmodifiedbyname  ";
   query += ` FROM ${this.schema}.file fl `;
-  query += " INNER JOIN public.user cu ON cu.Id = fl.createdbyid ";
-  query += " INNER JOIN public.user mu ON mu.Id = fl.lastmodifiedbyid ";
+  query += ` INNER JOIN ${this.schema}.user cu ON cu.Id = fl.createdbyid `;
+  query += ` INNER JOIN ${this.schema}.user mu ON mu.Id = fl.lastmodifiedbyid `;
   const result = await sql.query(query + 'WHERE fl.id = $1', [id]);
 
 

@@ -54,8 +54,9 @@ module.exports = (app, io) => {
         const phoneNumber = body.entry?.[0]?.changes?.[0]?.value?.metadata?.display_phone_number || null;
 
         const settingResult = await whModel.getTenantCodeByPhoneNumber(phoneNumber);
-        const platformData = await whModel.getPlatformData(settingResult.createdbyid);
-        const tenant_code = settingResult.tenantcode
+        console.log("createdbyid",settingResult)
+        const platformData = await whModel.getPlatformData(settingResult?.createdbyid);
+        const tenant_code = settingResult?.tenantcode
 
         console.log('##settingResult', settingResult);
         console.log("platformData",platformData);
@@ -67,7 +68,7 @@ module.exports = (app, io) => {
                 const message = body.entry[0].changes[0].value.messages[0];
                 const contactDetails = body.entry[0].changes[0].value.contacts[0];
               
-                if (message && message.from) {
+                if (message && message.from && tenant_code && phoneNumber) {
                     webModel.init(tenant_code);
                     const responce = await webModel.insertReceivedMessageRecord(message, contactDetails, phoneNumber, tenant_code, platformData);
                     // const responce2 = await chatBotMessage.insertReceivedMessageRecord(message, contactDetails, phoneNumber, tenant_code);
@@ -80,7 +81,7 @@ module.exports = (app, io) => {
                 const messageId = status.id;
                 const statusValue = status.status;
                    
-                if (messageId && statusValue) {
+                if (messageId && statusValue  && tenant_code && phoneNumber) {
 
                     msghistory.init(tenant_code);
                     const response = await msghistory.updateMessageStatus(messageId, statusValue);

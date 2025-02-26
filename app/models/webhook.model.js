@@ -90,7 +90,7 @@ async function handleTextMessage(message, contactDetails, userid, tenant_code, p
         file_id: null,
         is_read: false,
         business_number: phoneNumber,
-        message_id: message.id
+        message_id: message?.id
     };
 console.log("newMessage",newMessage);
     msghistory.init(tenant_code);
@@ -186,12 +186,12 @@ async function processMedia(result, contactDetails, fromNumber, userid, whatsapp
         const buffer = await imageResponse.buffer();
         const base64String = buffer.toString('base64');
         const fileExtension = MIMEType.has(result.mime_type) ? MIMEType.get(result.mime_type) : result.mime_type;
-
+        const caption = message.image?.caption || message.video?.caption || ''; 
         const newFile = {
             title: fileName ? fileName : `${result.id}.${fileExtension}`,
             filetype: fileExtension,
             filesize: result.file_size,
-            description: 'Incoming',
+            description: caption,
             parentid: null
         };
         console.log("newFile",newFile);
@@ -206,7 +206,7 @@ async function processMedia(result, contactDetails, fromNumber, userid, whatsapp
             if(savedFileResponse){
                 const fileUrl = `${process.env.BASE_URL}public/${tenant_code}/attachment/${fileInsert.title}`;
                 if (platformData.platform_name && platformData.platform_name !== 'react') {
-                    const caption = message.image?.caption || message.video?.caption || ''; 
+                    // const caption = message.image?.caption || message.video?.caption || ''; 
                     const externalData = {
                         name: contactDetails?.profile?.name || "",
                         whatsapp_number: fromNumber,
@@ -221,7 +221,7 @@ async function processMedia(result, contactDetails, fromNumber, userid, whatsapp
             
                 }
             }
-            await logMessageHistory(contactDetails, fromNumber, userid, fileInsert.id, tenant_code, phoneNumber);
+            await logMessageHistory(contactDetails, fromNumber, userid, fileInsert.id, tenant_code, phoneNumber, message);
         }
     } catch (error) {
         console.error('Error processing media:', error.message);
@@ -240,7 +240,7 @@ async function saveFile(buffer, title, tenant_code) {
 
 }
 
-async function logMessageHistory(contactDetails, fromNumber, userid, fileId, tenant_code, phoneNumber) {
+async function logMessageHistory(contactDetails, fromNumber, userid, fileId, tenant_code, phoneNumber, message) {
     const newMessage = {
         parent_id: null,
         name: contactDetails?.profile?.name || '',
@@ -252,7 +252,7 @@ async function logMessageHistory(contactDetails, fromNumber, userid, fileId, ten
         file_id: fileId,
         is_read: false,
         business_number: phoneNumber,
-        message_id: ''
+        message_id: message?.id
     };
 
     msghistory.init(tenant_code);
@@ -335,7 +335,7 @@ console.log("findOutgoingRecord",findOutgoingRecord)
     try {
         webTemplateModel.init(tenant_code);
         const response = await webTemplateModel.singleMessageSend(singleText, phoneNumber);
-        const messageId = response.messages[0].id;
+        const messageId = response?.messages[0]?.id;
 
         if (response.messaging_product === 'whatsapp') {
             const newMessage = {

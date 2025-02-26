@@ -42,7 +42,7 @@ async function getRecords(recordType, textName, cityName, userinfo) {
     // Check if userinfo and user ID is available
     if (userinfo && userinfo.id) {
         conditions.push(`(   ld.createdbyid IS NOT NULL AND ld.lastmodifiedbyid IS NOT NULL AND ld.ownerid IS NOT NULL 
-                          AND (ld.createdbyid = $${paramIndex} OR ld.createdbyid IN (SELECT id FROM public.user team WHERE managerid = $${paramIndex}) 
+                          AND (ld.createdbyid = $${paramIndex} OR ld.createdbyid IN (SELECT id FROM ${this.schema}.user team WHERE managerid = $${paramIndex}) 
                           OR ld.ownerid = $${paramIndex}) )`);
         params.push(userinfo.id);
         paramIndex++;
@@ -71,7 +71,7 @@ async function getRecords(recordType, textName, cityName, userinfo) {
 
         case 'user':
             query = `SELECT id, concat(usr.firstname, ' ' , usr.lastname) contactname, whatsapp_number 
-                         FROM public.user usr 
+                         FROM ${this.schema}.user usr 
                          WHERE whatsapp_number IS NOT NULL AND blocked = false AND whatsapp_number != '' `;
 
             if (textName) {
@@ -133,7 +133,7 @@ async function getRecords(recordType, textName, cityName, userinfo) {
             }
 
             if (userinfo && userinfo.id && (userinfo.userrole === 'USER' || userinfo.userrole === 'ADMIN')) {
-                conditions.push(`mh.createdbyid = $${paramIndex} OR mh.createdbyid IN (SELECT id FROM public.user team WHERE managerid = $${paramIndex})`);
+                conditions.push(`mh.createdbyid = $${paramIndex} OR mh.createdbyid IN (SELECT id FROM ${this.schema}.user team WHERE managerid = $${paramIndex})`);
                 params.push(userinfo.id);
                 paramIndex++;
             }
@@ -166,11 +166,11 @@ async function getRecords(recordType, textName, cityName, userinfo) {
     }
 
 
-    if ((recordType !== 'user' && recordType !== 'recentlyMessage') && (userinfo.userrole === 'USER' || userinfo.userrole === 'ADMIN')) {
-        conditions.push(`createdbyid = $${paramIndex} OR createdbyid IN (SELECT id FROM public.user team WHERE managerid = $${paramIndex})`);
-        params.push(userinfo.id);
-        paramIndex++;
-    }
+    // if ((recordType !== 'user' && recordType !== 'recentlyMessage') && (userinfo.userrole === 'USER' || userinfo.userrole === 'ADMIN')) {
+    //     conditions.push(`createdbyid = $${paramIndex} OR createdbyid IN (SELECT id FROM ${this.schema}.user team WHERE managerid = $${paramIndex})`);
+    //     params.push(userinfo.id);
+    //     paramIndex++;
+    // }
    
 
     if (recordType !== 'recentlyMessage' && conditions.length > 0) {

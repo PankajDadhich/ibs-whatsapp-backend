@@ -34,14 +34,34 @@ async function singleMessageSend(reqBody, phoneNumber) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            // return (`Failed to send message: ${response.status} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+         return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 }
 
@@ -64,14 +84,34 @@ async function sendWhatsappTemplate(reqBody, phoneNumber) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
+
         }
-console.log("response",response);
+// console.log("response",response);
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+        return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 }
 
@@ -94,14 +134,33 @@ async function deleteTemplate(id, name, phoneNumber) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+         return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 }
 
@@ -122,14 +181,33 @@ async function getAllTemplate(phoneNumber) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to upload image: ${response.statusText} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+         return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 }
 
@@ -149,14 +227,33 @@ async function getTemplateByName(name, phoneNumber) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to upload image: ${response.statusText} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+         return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 
 }
@@ -178,14 +275,33 @@ async function getTemplateById(id, phoneNumber) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to upload image: ${response.statusText} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+         return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 
 }
@@ -207,13 +323,32 @@ async function getAllApprovedTemplate(phoneNumber) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to upload image: ${response.statusText} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+         return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 }
 
@@ -231,14 +366,33 @@ async function uplodaedImage(name, size, mimetype, phoneNumber) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+         return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 }
 
@@ -262,14 +416,33 @@ async function uplodaedImageSession(uploadSessionId, data, phoneNumber) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+         return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 }
 
@@ -294,14 +467,33 @@ async function updateTemplate(id, reqBody, phoneNumber) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+         return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 }
 
@@ -322,17 +514,36 @@ try {
             },
             body: JSON.stringify(reqBody),
         });
-
+console.log("response",response)
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+         return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 }
 
@@ -354,14 +565,33 @@ async function upsertAuthTemplate(reqBody, phoneNumber) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+         return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 }
 
@@ -388,14 +618,33 @@ async function uploadDocumentWithApi(file, phoneNumber) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            let errorJson;
+
+            try {
+                errorJson = JSON.parse(errorText);
+            } catch (parseError) {
+                errorJson = { message: "Unable to parse error response", raw: errorText };
+            }
+            // throw new Error(`Failed to send message: ${response.status} - ${errorText}`);
+            return {
+                error: {
+                    message: errorJson?.error?.message || "Unknown error",
+                    title: errorJson?.error?.error_user_title || "No title",
+                    body: errorJson?.error?.error_user_msg || "No body",
+                }
+
+            };
         }
 
         return await response.json();
 
     } catch (error) {
         console.error('Error during message sending:', error);
-        throw new Error(error.message);
+         return {
+            error: {
+                message: error.message || "An unexpected error occurred",
+            }
+        };
     }
 }
 

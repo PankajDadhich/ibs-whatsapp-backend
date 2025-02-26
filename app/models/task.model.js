@@ -31,7 +31,7 @@ async function findById (id) {
 
 async function findAll(title){
   let query = `SELECT *, concat(ow.firstname, ' ' , ow.lastname) ownername FROM ${this.schema}.task`;
-      query += " INNER JOIN public.user ow ON ow.id = ownerid ";
+      query += ` INNER JOIN ${this.schema}.user ow ON ow.id = ownerid `;
 
   if (title) {
     query += ` WHERE title LIKE '%${title}%'`;
@@ -46,7 +46,7 @@ async function findAll(title){
 
 async function findAllMeetings(userinfo, today){
   let query = `SELECT *, concat(ow.firstname, ' ' , ow.lastname) ownername FROM ${this.schema}.task`;
-      query += " INNER JOIN public.user ow ON ow.id = ownerid ";
+      query += ` INNER JOIN ${this.schema}.user ow ON ow.id = ownerid `;
 
   if (today) {
     query += ` WHERE type = 'Meeting' AND startdatetime::date = now()::date AND ownerid = $1`;
@@ -64,7 +64,7 @@ async function findAllMeetings(userinfo, today){
 
 async function findAllToday(){
   let query = `SELECT *, concat(ow.firstname, ' ' , ow.lastname) ownername FROM ${this.schema}.task`;
-      query += " INNER JOIN public.user ow ON ow.id = ownerid ";
+      query += ` INNER JOIN ${this.schema}.user ow ON ow.id = ownerid `;
 
   //if (title) {
     query += ` WHERE createddate::date = now()::date`;
@@ -79,7 +79,7 @@ async function findAllToday(){
 
 async function findAllOpen(userinfo){
   let query = `SELECT t.*, concat(ow.firstname, ' ' , ow.lastname) ownername FROM ${this.schema}.task t `;
-      query += " INNER JOIN public.user ow ON ow.id = ownerid ";
+      query += ` INNER JOIN ${this.schema}.user ow ON ow.id = ownerid `;
 
  
     query += ` WHERE status in ('Not Started', 'In Progress' , 'Waiting') AND extract (month from createddate) >= extract(month from now()) - 1 AND     extract (year from createddate) >= extract(year from now())`;
@@ -163,9 +163,9 @@ async function findByParentId (pid) {
   query += " concat(mu.firstname, ' ' , mu.lastname) lastmodifiedbyname, ";
   query += " concat(owner.firstname, ' ' , owner.lastname) ownername ";
   query += ` FROM ${this.schema}.task tsk `;
-  query += " INNER JOIN public.user cu ON cu.Id = tsk.createdbyid ";
-  query += " INNER JOIN public.user mu ON mu.Id = tsk.lastmodifiedbyid ";
-  query += " INNER JOIN public.user owner ON owner.Id = tsk.ownerid ";
+  query += ` INNER JOIN ${this.schema}.user cu ON cu.Id = tsk.createdbyid `;
+  query += ` INNER JOIN ${this.schema}.user mu ON mu.Id = tsk.lastmodifiedbyid `;
+  query += ` INNER JOIN ${this.schema}.user owner ON owner.Id = tsk.ownerid `;
   try {
     const result = await sql.query(query + " WHERE tsk.parentid = $1",[pid]);
     console.log('query:', query);
